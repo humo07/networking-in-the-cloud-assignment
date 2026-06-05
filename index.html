@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FashionFlow Wholesale - Cloud Business Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
+body{display:flex;background:#f4f7fb}
+.sidebar{width:250px;background:#0b2c5f;color:#fff;min-height:100vh;padding:20px;position:fixed}
+.sidebar h2{margin-bottom:20px}
+.sidebar a{display:block;color:#fff;text-decoration:none;padding:12px;border-radius:8px;margin:6px 0}
+.sidebar a:hover{background:#174a96}
+.main{margin-left:250px;padding:20px;width:100%}
+.section{display:none}
+.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin:20px 0}
+.card{background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.1);animation:fade .4s}
+.card h3{color:#0b2c5f}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{padding:10px;border:1px solid #ddd;text-align:left}
+th{background:#0b2c5f;color:#fff}
+button{background:#0b2c5f;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+input{padding:8px;margin:10px 0;width:100%}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(max-width:768px){
+.sidebar{position:relative;width:100%;min-height:auto}
+.main{margin-left:0}
+body{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+<h2>☁ FashionFlow</h2>
+<a href="#" onclick="show('dashboard')">Dashboard</a>
+<a href="#" onclick="show('products')">Products (WMS)</a>
+<a href="#" onclick="show('customers')">Customers (CRM)</a>
+<a href="#" onclick="show('orders')">Orders (ERP)</a>
+<a href="#" onclick="show('about')">About</a>
+<a href="#" onclick="show('contact')">Contact</a>
+</div>
+
+<div class="main">
+
+<section id="dashboard" class="section active">
+<h1>Business Dashboard</h1>
+<div class="cards">
+<div class="card"><h3>Products</h3><p id="pcount"></p></div>
+<div class="card"><h3>Customers</h3><p id="ccount"></p></div>
+<div class="card"><h3>Orders</h3><p id="ocount"></p></div>
+<div class="card"><h3>Systems</h3><p>ERP • CRM • WMS</p></div>
+</div>
+<canvas id="chart"></canvas>
+</section>
+
+<section id="products" class="section">
+<h1>Products (WMS)</h1>
+<input id="psearch" placeholder="Search products..." onkeyup="renderProducts()">
+<button onclick="addProduct()">Add Product</button>
+<table><thead><tr><th>ID</th><th>Name</th><th>Stock</th><th>Action</th></tr></thead><tbody id="productsTable"></tbody></table>
+</section>
+
+<section id="customers" class="section">
+<h1>Customers (CRM)</h1>
+<input id="csearch" placeholder="Search customers..." onkeyup="renderCustomers()">
+<button onclick="addCustomer()">Add Customer</button>
+<table><thead><tr><th>ID</th><th>Name</th><th>City</th><th>Action</th></tr></thead><tbody id="customersTable"></tbody></table>
+</section>
+
+<section id="orders" class="section">
+<h1>Orders (ERP)</h1>
+<input id="osearch" placeholder="Search orders..." onkeyup="renderOrders()">
+<button onclick="addOrder()">Add Order</button>
+<table><thead><tr><th>ID</th><th>Customer</th><th>Amount</th><th>Action</th></tr></thead><tbody id="ordersTable"></tbody></table>
+</section>
+
+<section id="about" class="section">
+<h1>About Company</h1>
+<p>FashionFlow Wholesale is a cloud-enabled wholesale clothing company using ERP, CRM and WMS systems for efficient operations.</p>
+</section>
+
+<section id="contact" class="section">
+<h1>Contact</h1>
+<p>Email: info@fashionflow.com</p>
+<p>Phone: +1 555 123 4567</p>
+<p>Address: Cloud Business Center</p>
+</section>
+
+</div>
+
+<script>
+function show(id){
+document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+}
+
+let products=[
+{id:1,name:"T-Shirt",stock:120},{id:2,name:"Jeans",stock:90},{id:3,name:"Hoodie",stock:50},
+{id:4,name:"Jacket",stock:60},{id:5,name:"Dress",stock:80},{id:6,name:"Skirt",stock:70},
+{id:7,name:"Sweater",stock:55},{id:8,name:"Cap",stock:100},{id:9,name:"Shirt",stock:110},
+{id:10,name:"Blazer",stock:40},{id:11,name:"Shorts",stock:75},{id:12,name:"Polo",stock:65},
+{id:13,name:"Coat",stock:30},{id:14,name:"Socks",stock:200},{id:15,name:"Scarf",stock:95}
+];
+
+let customers=[
+{id:1,name:"Alpha Retail",city:"New York"},
+{id:2,name:"Beta Fashion",city:"Chicago"},
+{id:3,name:"Gamma Store",city:"Dallas"},
+{id:4,name:"Delta Wear",city:"Miami"},
+{id:5,name:"Elite Shop",city:"Boston"},
+{id:6,name:"Urban Style",city:"Seattle"},
+{id:7,name:"Trend Hub",city:"Denver"},
+{id:8,name:"Smart Fashion",city:"Austin"},
+{id:9,name:"Retail Pro",city:"Atlanta"},
+{id:10,name:"Prime Apparel",city:"Phoenix"}
+];
+
+let orders=[];
+for(let i=1;i<=20;i++){
+orders.push({id:i,customer:"Customer "+i,amount:100+i*25});
+}
+
+function renderProducts(){
+let q=document.getElementById('psearch').value.toLowerCase();
+productsTable.innerHTML=products.filter(x=>x.name.toLowerCase().includes(q)).map(x=>
+`<tr><td>${x.id}</td><td>${x.name}</td><td>${x.stock}</td><td><button onclick="delProduct(${x.id})">Delete</button></td></tr>`).join('');
+updateCounts();
+}
+function renderCustomers(){
+let q=document.getElementById('csearch').value.toLowerCase();
+customersTable.innerHTML=customers.filter(x=>x.name.toLowerCase().includes(q)).map(x=>
+`<tr><td>${x.id}</td><td>${x.name}</td><td>${x.city}</td><td><button onclick="delCustomer(${x.id})">Delete</button></td></tr>`).join('');
+updateCounts();
+}
+function renderOrders(){
+let q=document.getElementById('osearch').value.toLowerCase();
+ordersTable.innerHTML=orders.filter(x=>x.customer.toLowerCase().includes(q)).map(x=>
+`<tr><td>${x.id}</td><td>${x.customer}</td><td>$${x.amount}</td><td><button onclick="delOrder(${x.id})">Delete</button></td></tr>`).join('');
+updateCounts();
+}
+
+function addProduct(){products.push({id:Date.now(),name:"New Product",stock:50});renderProducts();}
+function addCustomer(){customers.push({id:Date.now(),name:"New Customer",city:"City"});renderCustomers();}
+function addOrder(){orders.push({id:Date.now(),customer:"New Customer",amount:500});renderOrders();}
+
+function delProduct(id){products=products.filter(x=>x.id!=id);renderProducts();}
+function delCustomer(id){customers=customers.filter(x=>x.id!=id);renderCustomers();}
+function delOrder(id){orders=orders.filter(x=>x.id!=id);renderOrders();}
+
+function updateCounts(){
+pcount.textContent=products.length;
+ccount.textContent=customers.length;
+ocount.textContent=orders.length;
+}
+
+renderProducts(); renderCustomers(); renderOrders();
+
+new Chart(document.getElementById('chart'),{
+type:'bar',
+data:{
+labels:['Products','Customers','Orders'],
+datasets:[{label:'Business Data',data:[15,10,20]}]
+}
+});
+</script>
+</body>
+</html>
